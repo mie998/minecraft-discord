@@ -138,3 +138,8 @@ aws cloudformation delete-stack --stack-name lambda
 For an introduction to the AWS SAM specification, the AWS SAM CLI, and serverless application concepts, see the [AWS SAM Developer Guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html).
 
 Next, you can use the AWS Serverless Application Repository to deploy ready-to-use apps that go beyond Hello World samples and learn how authors developed their applications. For more information, see the [AWS Serverless Application Repository main page](https://aws.amazon.com/serverless/serverlessrepo/) and the [AWS Serverless Application Repository Developer Guide](https://docs.aws.amazon.com/serverlessrepo/latest/devguide/what-is-serverlessrepo.html).
+
+## 追記
+以上の README 記述は全て sam-cli の init 機能によって自動生成されたものである。以下では、本ディレクトリに加えた変更点について追記する。
+基本となるコードは以下のページを参照している。
+https://docs.aws.amazon.com/code-samples/latest/catalog/javascript-ec2-ec2_startstopinstances.js.html
