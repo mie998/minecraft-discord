@@ -40,45 +40,58 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
     AWS.config.update({ region: process.env.REGION });
     const ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
+    const instanceId = process.env.INSTANCE_ID;
+    if (!instanceId) throw new Error('Instance ID is not set');
     const params: AWS.EC2.StartInstancesRequest = {
-        InstanceIds: [process.env.INSTANCE_ID],
+        InstanceIds: [instanceId],
         DryRun: true,
     };
     const body = JSON.parse(event.body);
-    const action = body.options[0].value;
-    switch (action) {
-        case 'start': {
-            await ec2.startInstances(params).promise();
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    message: 'Successfully started minecraft server!',
-                }),
-            };
+    const action = body.data.options[0].value;
+    const username = body.member.user.username;
+    try {
+        switch (action) {
+            case 'start': {
+                await ec2.startInstances(params).promise();
+                return {
+                    statusCode: 200,
+                    body: JSON.stringify({
+                        message: `hi, ${username} Successfully started minecraft server!`,
+                    }),
+                };
+            }
+            case 'stop': {
+                await ec2.stopInstances(params).promise();
+                return {
+                    statusCode: 200,
+                    body: JSON.stringify({
+                        message: 'Successfully stopped minecraft server!',
+                    }),
+                };
+            }
+            case 'test': {
+                return {
+                    statusCode: 200,
+                    body: JSON.stringify({
+                        message: 'test',
+                    }),
+                };
+            }
+            default:
+                return {
+                    statusCode: 400,
+                    body: JSON.stringify({
+                        message: "I don't know what you want me to do",
+                    }),
+                };
         }
-        case 'stop': {
-            await ec2.stopInstances(params).promise();
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    message: 'Successfully stopped minecraft server!',
-                }),
-            };
-        }
-        case 'test': {
-            return {
-                statusCode: 200,
-                body: JSON.stringify({
-                    message: 'bomb',
-                }),
-            };
-        }
-        default:
-            return {
-                statusCode: 400,
-                body: JSON.stringify({
-                    message: "I don't know what you want me to do",
-                }),
-            };
+    } catch (err) {
+        const response = {
+            statusCode: 500,
+            body: JSON.stringify({
+                message: err,
+            }),
+        };
+        return response;
     }
 };

@@ -4,13 +4,13 @@ import { lambdaHandler } from '../../app';
 describe('Unit test for app handler', function () {
     it('verifies successful response', async () => {
         const event: APIGatewayProxyEvent = {
-            httpMethod: 'get',
-            body: '',
+            httpMethod: 'post',
+            body: JSON.stringify({}),
             headers: {},
             isBase64Encoded: false,
             multiValueHeaders: {},
             multiValueQueryStringParameters: {},
-            path: '/hello',
+            path: '/ec2ctl',
             pathParameters: {},
             queryStringParameters: {},
             requestContext: {
