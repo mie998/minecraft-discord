@@ -1,4 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import AWS from 'aws-sdk';
+import nacl from 'tweetnacl';
+import { Buffer } from 'buffer';
 
 /**
  *
@@ -11,23 +14,71 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
  */
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    let response: APIGatewayProxyResult;
+    // discord bot verification
     try {
-        response = {
-            statusCode: 200,
-            body: JSON.stringify({
-                message: 'hello world',
-            }),
-        };
+        const header = event.headers;
+        const signature = header['X-Signature-Ed25519'];
+        const timestamp = header['X-Signature-Timestamp'];
+        if (!signature || !timestamp) throw new Error('neccecary X-Signature headers are missing');
+        if (!event.body) throw new Error('Missing body');
+        const body = JSON.parse(event.body);
+        const isVerified = nacl.sign.detached.verify(
+            Buffer.from(timestamp + body),
+            Buffer.from(signature, 'hex'),
+            Buffer.from(process.env.DISCORD_APPLICATION_PUBLIC_KEY || '', 'hex'),
+        );
+        if (!isVerified) throw new Error('Signature is not verified');
     } catch (err) {
-        console.log(err);
-        response = {
-            statusCode: 500,
+        const response = {
+            statusCode: 401,
             body: JSON.stringify({
-                message: 'some error happened',
+                message: err,
             }),
         };
+        return response;
     }
 
-    return response;
+    AWS.config.update({ region: process.env.REGION });
+    const ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
+    const params: AWS.EC2.StartInstancesRequest = {
+        InstanceIds: [process.env.INSTANCE_ID],
+        DryRun: true,
+    };
+    const body = JSON.parse(event.body);
+    const action = body.options[0].value;
+    switch (action) {
+        case 'start': {
+            await ec2.startInstances(params).promise();
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    message: 'Successfully started minecraft server!',
+                }),
+            };
+        }
+        case 'stop': {
+            await ec2.stopInstances(params).promise();
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    message: 'Successfully stopped minecraft server!',
+                }),
+            };
+        }
+        case 'test': {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    message: 'bomb',
+                }),
+            };
+        }
+        default:
+            return {
+                statusCode: 400,
+                body: JSON.stringify({
+                    message: "I don't know what you want me to do",
+                }),
+            };
+    }
 };
