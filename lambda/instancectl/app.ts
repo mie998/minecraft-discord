@@ -3,6 +3,18 @@ import AWS from 'aws-sdk';
 import nacl from 'tweetnacl';
 import { Buffer } from 'buffer';
 
+const responseBuilder = (statusCode: number, message: string, type = 4): APIGatewayProxyResult => {
+    return {
+        statusCode: statusCode,
+        body: JSON.stringify({
+            type: type,
+            data: {
+                content: message,
+            },
+        }),
+    };
+};
+
 /**
  *
  * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
@@ -12,7 +24,6 @@ import { Buffer } from 'buffer';
  * @returns {Object} object - API Gateway Lambda Proxy Output Format
  *
  */
-
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     // Checking signature header
     console.log(event);
@@ -31,13 +42,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         );
         if (!isVerified) throw new Error('invalid request signature');
     } catch (err) {
-        const response = {
-            statusCode: 401,
-            body: JSON.stringify({
-                message: err,
-            }),
-        };
-        return response;
+        return responseBuilder(401, err as string);
     }
 
     const instanceId = process.env.INSTANCE_ID;
@@ -50,61 +55,42 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         InstanceIds: [instanceId],
         DryRun: true,
     };
-    const body = JSON.parse(event.body!);
-    // Replying to ping
-    if (body.type === 1) {
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ type: 1 }),
-        };
-    }
 
-    // Replying to slash commands
-    const action = body.data.options[0].value;
-    const username = body.member.user.username;
-    try {
-        switch (action) {
-            case 'start': {
-                await ec2.startInstances(params).promise();
-                return {
-                    statusCode: 200,
-                    body: JSON.stringify({
-                        message: `hi, ${username} Successfully started minecraft server!`,
-                    }),
-                };
-            }
-            case 'stop': {
-                await ec2.stopInstances(params).promise();
-                return {
-                    statusCode: 200,
-                    body: JSON.stringify({
-                        message: 'Successfully stopped minecraft server!',
-                    }),
-                };
-            }
-            case 'test': {
-                return {
-                    statusCode: 200,
-                    body: JSON.stringify({
-                        message: 'test',
-                    }),
-                };
-            }
-            default:
-                return {
-                    statusCode: 400,
-                    body: JSON.stringify({
-                        message: "I don't know what you want me to do",
-                    }),
-                };
+    const body = JSON.parse(event.body!);
+    switch (body.type) {
+        // Replying to ping
+        case 1: {
+            return responseBuilder(200, 'pong', 1);
         }
-    } catch (err) {
-        const response = {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: err,
-            }),
-        };
-        return response;
+        // Replying to slash commands
+        case 2: {
+            const action = body.data.options[0].value;
+            const username = body.member.user.username;
+            switch (action) {
+                case 'start': {
+                    try {
+                        await ec2.startInstances(params).promise();
+                        return responseBuilder(200, `hi, ${username} Successfully started minecraft server!`);
+                    } catch (err) {
+                        return responseBuilder(500, err as string);
+                    }
+                }
+                case 'stop': {
+                    try {
+                        await ec2.stopInstances(params).promise();
+                        return responseBuilder(200, `Successfully stopped minecraft server!`);
+                    } catch (err) {
+                        return responseBuilder(500, err as string);
+                    }
+                }
+                case 'test': {
+                    return responseBuilder(200, `ok`);
+                }
+                default:
+                    return responseBuilder(400, `I don't know what you want me to do`);
+            }
+        }
+        default:
+            return responseBuilder(400, "This bot doesn't support this typeof operation...");
     }
 };

@@ -106,4 +106,13 @@ describe('EC2 control api test', function () {
         expect(result.statusCode).toEqual(200);
         expect(result.body).toEqual(JSON.stringify({ type: 1 }));
     });
+
+    it('discord test slash command', async () => {
+        const event: APIGatewayProxyEvent = {};
+
+        const result: APIGatewayProxyResult = await lambdaHandler(event);
+
+        expect(result.statusCode).toEqual(200);
+        expect(result.body).toEqual(JSON.stringify({ type: 1 }));
+    });
 });
