@@ -15,6 +15,7 @@ import { Buffer } from 'buffer';
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     // Checking signature header
+    console.log(event);
     try {
         const signature = event.headers['x-signature-ed25519'];
         const timestamp = event.headers['x-signature-timestamp'];
@@ -30,7 +31,6 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         );
         if (!isVerified) throw new Error('invalid request signature');
     } catch (err) {
-        console.log(err);
         const response = {
             statusCode: 401,
             body: JSON.stringify({
@@ -51,9 +51,6 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         DryRun: true,
     };
     const body = JSON.parse(event.body!);
-    const action = body.data.options[0].value;
-    const username = body.member.user.username;
-
     // Replying to ping
     if (body.type === 1) {
         return {
@@ -62,6 +59,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         };
     }
 
+    // Replying to slash commands
+    const action = body.data.options[0].value;
+    const username = body.member.user.username;
     try {
         switch (action) {
             case 'start': {
