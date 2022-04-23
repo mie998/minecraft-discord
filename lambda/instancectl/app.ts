@@ -14,20 +14,20 @@ import { Buffer } from 'buffer';
  */
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    // discord bot verification
+    console.log(event);
+    // Checking signature header
     try {
-        const header = event.headers;
-        const signature = header['X-Signature-Ed25519'];
-        const timestamp = header['X-Signature-Timestamp'];
+        const signature = event.headers['X-Signature-Ed25519'];
+        const timestamp = event.headers['X-Signature-Timestamp'];
+        const strBody = event.body;
         if (!signature || !timestamp) throw new Error('neccecary X-Signature headers are missing');
-        if (!event.body) throw new Error('Missing body');
-        const body = JSON.parse(event.body);
+        if (!strBody) throw new Error('Missing body');
         const isVerified = nacl.sign.detached.verify(
-            Buffer.from(timestamp + body),
+            Buffer.from(timestamp + strBody),
             Buffer.from(signature, 'hex'),
-            Buffer.from(process.env.DISCORD_APPLICATION_PUBLIC_KEY || '', 'hex'),
+            Buffer.from(process.env.DISCORD_PUBLIC_KEY || '', 'hex'),
         );
-        if (!isVerified) throw new Error('Signature is not verified');
+        if (!isVerified) throw new Error('invalid request signature');
     } catch (err) {
         const response = {
             statusCode: 401,
@@ -46,9 +46,18 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         InstanceIds: [instanceId],
         DryRun: true,
     };
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body!);
     const action = body.data.options[0].value;
     const username = body.member.user.username;
+
+    // Replying to ping
+    if (body.type === 1) {
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ type: 1 }),
+        };
+    }
+
     try {
         switch (action) {
             case 'start': {

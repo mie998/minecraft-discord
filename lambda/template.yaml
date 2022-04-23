@@ -40,7 +40,7 @@ Outputs:
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   InstanceControlApi:
     Description: "API Gateway endpoint URL for Prod stage for EC2 instance control function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/ec2ctl/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/instance_ctl/"
   InstanceControlFunction:
     Description: "EC2 instance control Lambda Function ARN"
     Value: !GetAtt InstanceControlFunction.Arn
