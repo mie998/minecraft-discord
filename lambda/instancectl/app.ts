@@ -26,7 +26,6 @@ const responseBuilder = (statusCode: number, message: string, type = 4): APIGate
  */
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     // Checking signature header
-    console.log(event);
     try {
         const signature = event.headers['x-signature-ed25519'];
         const timestamp = event.headers['x-signature-timestamp'];
@@ -53,7 +52,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     const ec2 = new AWS.EC2({ apiVersion: '2016-11-15' });
     const params: AWS.EC2.StartInstancesRequest = {
         InstanceIds: [instanceId],
-        DryRun: true,
+        DryRun: false,
     };
 
     const body = JSON.parse(event.body!);
@@ -72,6 +71,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
                         await ec2.startInstances(params).promise();
                         return responseBuilder(200, `hi, ${username} Successfully started minecraft server!`);
                     } catch (err) {
+                        console.error(err);
                         return responseBuilder(500, err as string);
                     }
                 }
