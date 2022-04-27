@@ -26,8 +26,8 @@ const commandData = {
           value: "stop",
         },
         {
-          name: "test",
-          value: "test",
+          name: "cold_start",
+          value: "cold_start",
         },
       ],
     },

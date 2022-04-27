@@ -83,8 +83,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
                         return responseBuilder(500, err as string);
                     }
                 }
-                case 'test': {
-                    return responseBuilder(200, `ok`);
+                case 'cold_start': {
+                    return responseBuilder(200, `AWS lambda cold start done.`);
                 }
                 default:
                     return responseBuilder(400, `I don't know what you want me to do`);
